@@ -66,7 +66,8 @@ async function fetchFromRapidApi(sourceUrl: string, format: string = "mp3"): Pro
 
   const host = getHost();
   const videoId = extractYoutubeId(sourceUrl);
-  const endpoint = `https://${host}/dl?id=${encodeURIComponent(videoId)}&format=${encodeURIComponent(format)}`;
+  const path = format === "mp4" ? "/mp4" : "/dl";
+  const endpoint = `https://${host}${path}?id=${encodeURIComponent(videoId)}`;
 
   const maxRetries = 20;
   let attempts = 0;
@@ -120,19 +121,29 @@ async function fetchFromRapidApi(sourceUrl: string, format: string = "mp3"): Pro
   };
 }
 
+function detectFormat(url: string, requestedFormat: string): string {
+  const ext = url.split("?").shift()?.split(".").pop()?.toLowerCase();
+  if (ext === "mp4") return "mp4";
+  if (ext === "webm") return "mp4";
+  if (ext === "mp3" || ext === "m4a" || ext === "aac" || ext === "wav") return "mp3";
+  return requestedFormat;
+}
+
 function normalizeResult(data: ApiResult, sourceUrl: string, format: string = "mp3"): NormalizedResult {
   const videoId = extractYoutubeId(sourceUrl);
   const result = data.result || data;
-  const defaultQuality = format === "mp4" ? "720p" : "320kbps";
+  const downloadUrl = stringValue(result.link);
+  const actualFormat = detectFormat(downloadUrl, format);
+  const defaultQuality = actualFormat === "mp4" ? "720p" : "320kbps";
   
   return {
-    url: stringValue(result.link),
+    url: downloadUrl,
     title: stringValue(result.title) || `YouTube Video (${videoId})`,
     thumbnailUrl: stringValue(result.thumbnail) || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
     duration: formatDuration(result.duration),
     quality: stringValue(result.quality) || defaultQuality,
     size: "Unknown",
-    format,
+    format: actualFormat,
   };
 }
 
