@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
           const data = await response.json();
           return NextResponse.json({
             title: data.title || "Unknown",
-            duration: data.length ? formatDuration(parseInt(data.length)) : "0:00",
-            thumbnail: data.thumbnails?.[0]?.url || data.thumbnail || "",
+            duration: data.length ? formatDuration(parseInt(data.length)) : "—",
+            thumbnail: data.thumbnail_url || data.thumbnail || "",
           });
         }
         console.warn("RapidAPI failed, falling back to Innertube");
